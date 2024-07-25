@@ -3,6 +3,8 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.List;
+import  java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class HotelSystem {
     private List<User> users;
@@ -267,19 +269,20 @@ public class HotelSystem {
 
             User user = findUser(username);
 
-            if ( user != null ) {
-                System.out.print("Enter check-in date (yyyy-mm-dd): ");
-                LocalDate checkInDate = LocalDate.parse(scanner.nextLine());
-                System.out.print("Enter check-out date (yyyy-mm-dd): ");
-                LocalDate checkOutDate = LocalDate.parse(scanner.nextLine());
+            if (user != null) {
+                LocalDate checkInDate = getValidDate("Enter check-in date (yyyy-mm-dd): ");
+                LocalDate checkOutDate = getValidDate("Enter check-out date (yyyy-mm-dd): ");
 
-                String reservationId = UUID.randomUUID().toString();
-
-                reservations.add(new Reservation(reservationId, roomNumber, username, checkInDate, checkOutDate));
-                room.setAvailable(false);
-                System.out.println("Reservation made successfully.");
+                if (checkOutDate.isAfter(checkInDate)) {
+                    String reservationId = UUID.randomUUID().toString();
+                    reservations.add(new Reservation(reservationId, roomNumber, username, checkInDate, checkOutDate));
+                    room.setAvailable(false);
+                    System.out.println("Reservation made successfully.");
+                } else {
+                    System.out.println("Invalid dates. Check-out date must be after check-in date.");
+                }
             } else {
-                System.out.println("User not found");
+                System.out.println("User not found.");
             }
         } else {
             System.out.println("Room not available or not found");
@@ -293,14 +296,16 @@ public class HotelSystem {
 
         Reservation reservation = findReservation(reservationId);
 
-        if ( reservation != null ) {
-            System.out.print("Enter new check-in date (current: " + reservation.getCheckInDate() + "): ");
-            LocalDate newCheckInDate = LocalDate.parse(scanner.nextLine());
-            System.out.print("Enter new check-out date (current: " + reservation.getCheckOutDate() + "): ");
-            LocalDate newCheckOutDate = LocalDate.parse(scanner.nextLine());
+        if (reservation != null) {
+            LocalDate checkInDate = getValidDate("Enter new check-in date (current: " + reservation.getCheckInDate() + "): ");
+            LocalDate checkOutDate = getValidDate("Enter new check-out date (current: " + reservation.getCheckOutDate() + "): ");
 
-            reservation = new Reservation(reservation.getReservationId(), reservation.getRoomNumber(), reservation.getUsername(), newCheckInDate, newCheckOutDate);
-            System.out.println("Reservation updated successfully.");
+            if (checkOutDate.isAfter(checkInDate)) {
+                reservation = new Reservation(reservation.getReservationId(), reservation.getRoomNumber(), reservation.getUsername(), checkInDate, checkOutDate);
+                System.out.println("Reservation updated successfully.");
+            } else {
+                System.out.println("Invalid dates. Check-out date must be after check-in date.");
+            }
         } else {
             System.out.println("Reservation not found.");
         }
@@ -334,5 +339,18 @@ public class HotelSystem {
               System.out.println(reservation);
           }
       }
+    }
+    
+    private LocalDate getValidDate(String prompt) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        while (true) {
+            System.out.print(prompt);
+            String dateStr = scanner.nextLine();
+            try {
+                return LocalDate.parse(dateStr, formatter);
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format. Please enter date in yyyy-MM-dd format.");
+            }
+        }
     }
 }
